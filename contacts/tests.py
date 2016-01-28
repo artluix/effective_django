@@ -1,9 +1,10 @@
 from django.test import TestCase, LiveServerTestCase
 from django.test.client import Client, RequestFactory
-from selenium.webdriver.chrome.webdriver import WebDriver
+from rebar.testing import flatten_to_dict
 
 from .models import Contact
 from .views import ListContactView
+from contacts import forms
 
 
 class ContactTests(TestCase):
@@ -20,10 +21,10 @@ class ContactListViewTests(TestCase):
     """Contact list view tests."""
 
     def test_contacts_in_the_context(self):
-       
+                                                               
         client = Client()
         response = client.get('/')
-        
+                    
         self.assertEquals(list(response.context['object_list']), [])
 
         Contact.objects.create(first_name='foo', last_name='bar')
@@ -35,7 +36,7 @@ class ContactListViewTests(TestCase):
         factory = RequestFactory()
         request = factory.get('/')
         response = ListContactView.as_view()(request)
-        
+            
         self.assertEquals(list(response.context_data['object_list']), [])
 
         Contact.objects.create(first_name='foo', last_name='bar')
@@ -43,42 +44,26 @@ class ContactListViewTests(TestCase):
         self.assertEquals(response.context_data['object_list'].count(), 1)
 
 
-class ContactListIntegrationTests(LiveServerTestCase):
+class EditContactFormTests(TestCase):
 
-        @classmethod
-        def setUpClass(cls):
-            cls.selenium = WebDriver()
-            super().setUpClass()
+    def test_mismatch_email_is_invalid(self):
+        form_data = flatten_to_dict(forms.ContactForm)
+        form_data['first_name'] = 'Foo'
+        form_data['last_name'] = 'Bar'
+        form_data['email'] = 'foo@example.com'
+        form_data['confirm_email'] = 'bar@example.com'
 
-        @classmethod
-        def tearDownClass(cls):
-            cls.selenium.quit()
-            super().tearDownClass()
+        bound_form = forms.ContactForm(data=form_data)
+        self.assertFalse(bound_form.is_valid())
 
-        def test_contact_listed(self):
+    def test_same_email_is_valid(self):
+        form_data = flatten_to_dict(forms.ContactForm)
+        form_data['first_name'] = 'Foo'
+        form_data['last_name'] = 'Bar'
+        form_data['email'] = 'foo@example.com'
+        form_data['confirm_email'] = 'foo@example.com'
 
-            # create a test contact
-            Contact.objects.create(first_name='foo', last_name='bar')
+        bound_form = forms.ContactForm(data=form_data)
+        self.assert_(bound_form.is_valid())
 
-            # make sure it's listed as <first> <last> on the list
-            self.selenium.get('%s%s' % (self.live_server_url, '/'))
-            self.assertEquals(self.selenium.find_elements_by_css_selector('.contact')[0].text,
-                    'foo bar')
-
-        def test_add_contact_linked(self):
-
-            self.selenium.get('%s%s' % (self.live_server_url, '/'))
-            self.assert_(self.selenium.find_element_by_link_text('add contact'))
-
-        def test_add_contact(self):
-
-            self.selenium.get('%s%s' % (self.live_server_url, '/'))
-            self.selenium.find_element_by_link_text('add contact').click()
-
-            self.selenium.find_element_by_id('id_first_name').send_keys('test')
-            self.selenium.find_element_by_id('id_last_name').send_keys('contact')
-            self.selenium.find_element_by_id('id_email').send_keys('test@example.com')
-
-            self.selenium.find_element_by_id("save_contact").click()
-            self.assertEqual(self.selenium.find_elements_by_css_selector('.contact')[-1].text,
-                    'test contact')
+    
