@@ -57,7 +57,7 @@ ROOT_URLCONF = 'addressbook.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': ['addressbook/templates',],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -78,10 +78,8 @@ WSGI_APPLICATION = 'addressbook.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'effective_django',
-        'USER': 'root',
-        'PASSWORD': 'magista101214', 
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': 'effective_django.db'
     }
 }
 
@@ -128,3 +126,7 @@ STATIC_URL = '/static/'
 STATICFILES_DIRS = (
         os.path.join(os.path.dirname(__file__), 'static',),
 )
+
+LOGIN_REDIRECT_URL = '/'
+
+LOGIN_URL = 'django.contrib.auth.views.login'

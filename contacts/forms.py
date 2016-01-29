@@ -1,7 +1,8 @@
 from django import forms
 from django.core.exceptions import ValidationError
+from django.forms.models import inlineformset_factory
 
-from .models import Contact
+from .models import Contact, Address
 
 
 class ContactForm(forms.ModelForm):
@@ -28,3 +29,4 @@ class ContactForm(forms.ModelForm):
             
         return self.cleaned_data
             
+ContactAddressFormSet = inlineformset_factory(Contact, Address, fields='__all__')
